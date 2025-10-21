@@ -51,4 +51,4 @@ jobs:
 
       - name: Kamal deploy
         run: |
-          bundle exec kamal deploy --skip-build --version "$VERSION"
+          bundle exec kamal deploy --version "$VERSION"
