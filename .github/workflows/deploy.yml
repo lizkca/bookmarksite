@@ -8,9 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      # 版本号：使用当前 commit sha
       VERSION: ${{ github.sha }}
-      # 部署所需环境变量（注入到 Kamal）
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
       KAMAL_REGISTRY_PASSWORD: ${{ secrets.DOCR_TOKEN_SECRET }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -50,10 +48,6 @@ jobs:
       - name: Kamal build
         run: |
           bundle exec kamal build --version "$VERSION"
-
-      - name: Kamal push
-        run: |
-          bundle exec kamal push --version "$VERSION"
 
       - name: Kamal deploy
         run: |
