@@ -52,3 +52,8 @@ jobs:
       - name: Kamal deploy
         run: |
           bundle exec kamal deploy --version "$VERSION"
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          bundle exec kamal logs || true
+          bundle exec kamal app exec --reuse "tail -n 200 log/production.log" || true
