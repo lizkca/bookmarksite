@@ -40,10 +40,13 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add droplet to known_hosts
+      - name: Refresh known_hosts for droplet
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          # 移除旧指纹（忽略未找到的情况）
+          ssh-keygen -R "$SSH_HOST" || true
+          # 拉取并写入最新指纹（ed25519；5秒超时）
+          ssh-keyscan -T 5 -t ed25519 -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - name: Kamal build
         run: |
