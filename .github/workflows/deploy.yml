@@ -55,8 +55,33 @@ jobs:
       - name: Kamal deploy
         run: |
           bundle exec kamal deploy --version "$VERSION"
-      - name: Dump logs on failure
+      - name: Dump container logs on failure
         if: failure()
+        shell: bash
         run: |
-          bundle exec kamal logs || true
-          bundle exec kamal app exec --reuse "tail -n 200 log/production.log" || true
+          set -euxo pipefail
+          # 找到最新的 web 容器名（包含运行中、重启中、已退出）
+          CONTAINER_NAME="$(docker ps -a --format '{{.Names}}' \
+            --filter label=service=bookmarksite \
+            --filter label=role=web \
+            | head -1 || true)"
+          if [[ -n "${CONTAINER_NAME}" ]]; then
+            echo "Printing logs for container: ${CONTAINER_NAME}"
+            docker logs --tail 200 "${CONTAINER_NAME}" || true
+            docker inspect "${CONTAINER_NAME}" --format='{{json .State}}' || true
+          else
+            echo "No container name found, trying by ancestor image id..."
+            ANCESTOR_ID="$(docker image ls --filter reference=registry.digitalocean.com/bearbear/bookmarksite:latest --format '{{.ID}}' | head -1 || true)"
+            if [[ -n "${ANCESTOR_ID}" ]]; then
+              CID="$(docker ps -a --format '{{.ID}}' --filter ancestor="${ANCESTOR_ID}" | head -1 || true)"
+              if [[ -n "${CID}" ]]; then
+                echo "Printing logs for container id: ${CID}"
+                docker logs --tail 200 "${CID}" || true
+                docker inspect "${CID}" --format='{{json .State}}' || true
+              else
+                echo "No container id found for ancestor image."
+              fi
+            else
+              echo "Ancestor image not found."
+            fi
+          fi
